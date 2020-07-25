@@ -1,0 +1,28 @@
+{
+  "name": "@danielmcmillan/ts-ingest-agent-telemetrynetau",
+  "version": "0.0.1",
+  "description": "ts-ingest timeseries data collection agent for telemetry.net.au.",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Daniel McMillan",
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:danielmcmillan/ts-ingest.git"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.5.7",
+    "typescript": "^3.9.7"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.0",
+    "@danielmcmillan/ts-ingest-lib": "0.0.1"
+  }
+}

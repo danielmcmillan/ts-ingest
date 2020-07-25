@@ -1,0 +1,27 @@
+{
+  "name": "@danielmcmillan/ts-ingest-destination-postgresql",
+  "version": "0.0.1",
+  "description": "ts-ingest timeseries data storage destination.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:danielmcmillan/ts-ingest.git"
+  },
+  "dependencies": {
+    "@types/pg": "^7.14.4",
+    "pg": "^8.3.0",
+    "@danielmcmillan/ts-ingest-lib": "0.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^3.9.7"
+  }
+}
