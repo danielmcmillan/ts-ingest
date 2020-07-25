@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import fetch from "node-fetch";
 import { promises as fs } from "fs";
 import { IDataSample } from "../../../lib/dist";

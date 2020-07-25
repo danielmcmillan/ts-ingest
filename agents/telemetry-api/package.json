@@ -1,8 +1,11 @@
 {
   "name": "@danielmcmillan/ts-ingest-agent-telemetrynetau",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "ts-ingest timeseries data collection agent for telemetry.net.au.",
   "main": "dist/index.js",
+  "bin": {
+    "telemetry-agent": "dist/index.js"
+  },
   "scripts": {
     "start": "node dist/index.js",
     "build": "tsc",
