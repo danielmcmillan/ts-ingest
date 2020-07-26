@@ -1,10 +1,10 @@
 export interface IDataSample {
-  /** Epoch timestamp (seconds) */
-  timestamp: number;
+  /** Epoch timestamp (milliseconds) */
+  time: number;
   /** Name for the source of the data sample. */
   source: string;
-  /** Numeric value for each field in the data sample. */
-  values: {
-    [field: string]: number;
-  }
+  /** Name for the data field. */
+  field: string;
+  /** Numeric value for the data sample. */
+  value: number;
 }

@@ -1,6 +1,6 @@
 {
   "name": "@danielmcmillan/ts-ingest-agent-telemetrynetau",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "ts-ingest timeseries data collection agent for telemetry.net.au.",
   "main": "dist/index.js",
   "bin": {
@@ -26,6 +26,6 @@
   },
   "dependencies": {
     "node-fetch": "^2.6.0",
-    "@danielmcmillan/ts-ingest-lib": "0.0.1"
+    "@danielmcmillan/ts-ingest-lib": "0.1.1"
   }
 }

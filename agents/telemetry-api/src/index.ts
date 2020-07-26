@@ -33,16 +33,12 @@ const options = {
 };
 
 async function getSamplesFromResponse(json: ISampleDataResponse): Promise<IDataSample[]> {
-  return json.samples.map(sample => ({
-    timestamp: new Date(sample.time).getTime() / 1000,
+  return json.samples.flatMap(sample => Object.entries(json.sampleDesc).map(([fieldNum, fieldDesc]) => ({
+    time: Date.parse(sample.time),
     source: options.SOURCE_NAME,
-    values: Object.fromEntries(
-      Object.entries(json.sampleDesc).map(([fieldNum, fieldDesc]) => [
-        fieldDesc.name,
-        sample[fieldNum as unknown as number]
-      ])
-    )
-  }));
+    field: fieldDesc.name,
+    value: sample[fieldNum as unknown as number]
+  })));
 }
 
 async function* getSamples(startTime: string): AsyncGenerator<IDataSample[], void, string> {
@@ -99,7 +95,7 @@ async function main() {
     if (!samples) {
       break;
     }
-    startTime = new Date(samples[samples.length - 1].timestamp * 1000 + 1000).toISOString();
+    startTime = new Date(samples[samples.length - 1].time + 1000).toISOString();
 
     const result = await fetch(options.STORAGE_URL, {
       method: "POST",

@@ -1,6 +1,6 @@
 {
   "name": "@danielmcmillan/ts-ingest-destination-postgresql",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "ts-ingest timeseries data storage destination.",
   "main": "dist/index.js",
   "scripts": {
@@ -17,9 +17,9 @@
     "url": "git@github.com:danielmcmillan/ts-ingest.git"
   },
   "dependencies": {
+    "@danielmcmillan/ts-ingest-lib": "0.1.0",
     "@types/pg": "^7.14.4",
-    "pg": "^8.3.0",
-    "@danielmcmillan/ts-ingest-lib": "0.0.1"
+    "pg": "^8.3.0"
   },
   "devDependencies": {
     "typescript": "^3.9.7"
