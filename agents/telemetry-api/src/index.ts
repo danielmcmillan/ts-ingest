@@ -99,7 +99,7 @@ async function main() {
     if (!samples) {
       break;
     }
-    startTime = new Date(samples[samples.length - 1].timestamp * 1000).toISOString();
+    startTime = new Date(samples[samples.length - 1].timestamp * 1000 + 1000).toISOString();
 
     const result = await fetch(options.STORAGE_URL, {
       method: "POST",
