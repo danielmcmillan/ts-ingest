@@ -8,6 +8,7 @@ export class PostgresqlDestination implements IDestination {
   }) { }
 
   async storeSamples(samples: IDataSample[]): Promise<void> {
+    const ingestTime = new Date().toISOString();
     const client = new pg.Client(this.options.pg);
     await client.connect();
     const rows = samples.flatMap(sample => {
@@ -17,18 +18,20 @@ export class PostgresqlDestination implements IDestination {
         sample.source,
         field,
         value,
+        ingestTime
       ]);
     });
     await client.query(
-      `INSERT INTO ${this.options.table} (time, source, field, value)
-        SELECT * FROM UNNEST ($1::TIMESTAMPTZ[], $2::TEXT[], $3::TEXT[], $4::DOUBLE PRECISION[])
+      `INSERT INTO ${this.options.table} (time, source, field, value, ingestTime)
+        SELECT * FROM UNNEST ($1::TIMESTAMPTZ[], $2::TEXT[], $3::TEXT[], $4::DOUBLE PRECISION[], $5::TIMESTAMPTZ[])
         ON CONFLICT (time, source, field) DO UPDATE
-          SET value = excluded.value;`,
+          SET value = excluded.value, ingestTime = excluded.ingestTime;`,
       [
         rows.map(row => row[0]),
         rows.map(row => row[1]),
         rows.map(row => row[2]),
         rows.map(row => row[3]),
+        rows.map(row => row[4]),
       ]
     );
     await client.end();
