@@ -1,8 +1,8 @@
-#ifndef __DANIEL_MCMILLAN_AWS_REQUEST_H__
-#define __DANIEL_MCMILLAN_AWS_REQUEST_H__
+#ifndef __AWS_REQUEST_H__
+#define __AWS_REQUEST_H__
 
+#include "esp_wifi.h"
 #include <pgmspace.h>
-#include <ESP8266WiFi.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
@@ -30,7 +30,10 @@ namespace aws_request
     WiFiClientSecure client;
     WiFiUDP ntpUDP;
     NTPClient timeClient;
+
+#ifdef ESP8266
     BearSSL::X509List x509;
+#endif
 
   public:
     AWSRequestParameters parameters;
