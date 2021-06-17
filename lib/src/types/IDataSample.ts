@@ -6,5 +6,5 @@ export interface IDataSample {
   /** Name for the data field. */
   field: string;
   /** Numeric value for the data sample. */
-  value: number;
+  value: number | null;
 }
