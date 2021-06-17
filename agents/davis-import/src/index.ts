@@ -2,87 +2,131 @@
 import AWS from "aws-sdk";
 import fetch from "node-fetch";
 import { IDataSample } from "@danielmcmillan/ts-ingest-lib";
+import * as davisLib from "@danielmcmillan/davis-weather-lib";
 
 const options = {
   AWS_REGION: process.env.REGION ?? process.env.AWS_REGION,
-  DAVIS_SQS_URL: process.env.DAVIS_SQS_URL,
-  STORAGE_URL: process.env.STORAGE_URL,
-  SOURCE_NAME: process.env.SOURCE_NAME,
+  DAVIS_SQS_URL: process.env.DAVIS_SQS_URL!,
+  STORAGE_URL: process.env.STORAGE_URL!,
+  SOURCE_NAME: process.env.SOURCE_NAME!,
 };
 
-interface LoopData {
-  OUTSIDE_TEMP: number;
-  WIND_SPEED_10MIN_AVG: number;
-}
-
-interface IDavisMessage {
-  timestamp: number;
-  loopData: LoopData;
+interface IMessagePacket {
+  packet: davisLib.Packet;
   receiptHandle: string;
 }
 
-function parseMessageBody(body?: string): LoopData | undefined {
-  const hexData = (body ?? "").match(/Hello number \d+:([a-fA-F0-9]{99})/)?.[1];
-  return hexData ? parseLoopData(Buffer.from(hexData, "hex")) : undefined;
-}
-
-function parseLoopData(data: Buffer): LoopData {
-  const convertTenthsOfFarenheit = (value: number) => (value / 10 - 32) * 5 / 9
-  const convertTenthsOfMile = (value: number) => value * 0.160934;
-  return {
-    OUTSIDE_TEMP: convertTenthsOfFarenheit(data.readInt16LE(12)),
-    WIND_SPEED_10MIN_AVG: convertTenthsOfMile(data.readUInt16LE(18)),
-  };
-}
-
-async function recieveMessages(): Promise<IDavisMessage[]> {
+// Receive messages from SQS queue and return list of individual sample packets
+async function recieveMessages(): Promise<IMessagePacket[]> {
   const sqs = new AWS.SQS({
     region: options.AWS_REGION,
   });
-  const messages = await sqs.receiveMessage({
-    QueueUrl: options.DAVIS_SQS_URL,
-    MaxNumberOfMessages: 10,
-    WaitTimeSeconds: 20,
-    AttributeNames: ["SentTimestamp"],
-  }).promise();
-  return (messages.Messages ?? []).map(message => {
-
-    return {
-      timestamp: parseInt(message.Attributes.SentTimestamp, 10),
-      loopData: parseMessageBody(message.Body),
-      receiptHandle: message.ReceiptHandle!,
-    };
+  const messages = await sqs
+    .receiveMessage({
+      QueueUrl: options.DAVIS_SQS_URL,
+      MaxNumberOfMessages: 10,
+      WaitTimeSeconds: 20,
+      AttributeNames: ["SentTimestamp"],
+    })
+    .promise();
+  return (messages.Messages ?? []).flatMap((message) => {
+    if (message.Body === undefined || message.Attributes === undefined) {
+      console.error("SQS message missing body or attributes", message);
+      return [];
+    }
+    try {
+      return davisLib
+        .extractPackets(message.Body, {
+          sentTimestamp: parseInt(message.Attributes.SentTimestamp, 10),
+        })
+        .map((packet) => ({
+          packet,
+          receiptHandle: message.ReceiptHandle!,
+        }));
+    } catch (err) {
+      if (err instanceof davisLib.UnrecognisedMessageFormatError) {
+        console.error("Message data is invalid", message);
+        return [];
+      }
+      throw err;
+    }
   });
 }
 
 async function main() {
+  const failedMessages = new Set<string>();
   const messages = await recieveMessages();
-  const samples: IDataSample[] = messages.flatMap(message => Object.entries(message.loopData).map(([field, value]) => ({
-    time: message.timestamp,
-    source: options.SOURCE_NAME,
-    field,
-    value,
-  })));
+  const samples: IDataSample[] = messages.flatMap((message) => {
+    if (!davisLib.validateCRC(message.packet.data)) {
+      console.warn("Packet failed CRC check");
+      failedMessages.add(message.receiptHandle);
+    }
+    const fields = davisLib.parsePacket(
+      message.packet.data,
+      davisLib.loop2Definition
+    );
+    const fieldNames: Array<keyof davisLib.Loop2Parsed> = [
+      "insideTemperature",
+      "insideHumidity",
+      "outsideTemperature",
+      "outsideHumidity",
+      "barometer",
+      "barTrend",
+      "rainRate",
+      "windSpeed",
+      "windDirection",
+      "avgWindSpeed10Min",
+      "avgWindSpeed2Min",
+      "windGust10Min",
+      "windDirection10MinGust",
+      "dayRain",
+      "last24HourRain",
+      "lastHourRain",
+      "last15MinuteRain",
+      "stormRain",
+      "stormStartDate",
+      // "dayET",
+      // "dewPoint",
+      // "heatIndex",
+      // "windChill",
+      // "thswIndex",
+      // "uv",
+      // "solarRadiation",
+    ];
+    return fieldNames.map((field) => ({
+      time: message.packet.timestamp,
+      source: options.SOURCE_NAME,
+      field,
+      value: fields[field] ?? null,
+    }));
+  });
+
   const result = await fetch(options.STORAGE_URL, {
     method: "POST",
     body: JSON.stringify(samples),
     headers: {
-      "Content-Type": "application/json"
-    }
+      "Content-Type": "application/json",
+    },
   });
   if (!result.ok) {
-    throw new Error(`Failed to store results: ${result.status}`);
+    throw new Error(`Failed to store results: ${result.status}.`);
   }
-  await Promise.all(messages.map(async (message) => {
-    await new AWS.SQS({ region: options.AWS_REGION }).deleteMessage({
-      QueueUrl: options.DAVIS_SQS_URL,
-      ReceiptHandle: message.receiptHandle,
-    }).promise();
-  }));
-  console.log(`Processed ${messages.length} messages`);
+  await Promise.all(
+    messages.map(async (message) => {
+      if (!failedMessages.has(message.receiptHandle)) {
+        await new AWS.SQS({ region: options.AWS_REGION })
+          .deleteMessage({
+            QueueUrl: options.DAVIS_SQS_URL,
+            ReceiptHandle: message.receiptHandle,
+          })
+          .promise();
+      }
+    })
+  );
+  console.log(`Processed ${messages.length} packets.`);
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
