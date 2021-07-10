@@ -10,7 +10,7 @@ interface ISampleDataResponse {
       field: string;
       name: string;
       units: string;
-    }
+    };
   };
   samples: Array<{
     time: string;
@@ -19,37 +19,43 @@ interface ISampleDataResponse {
 }
 
 const options = {
-  TELEMETRY_API_KEY: process.env.TELEMETRY_API_KEY,
-  STORAGE_URL: process.env.STORAGE_URL,
-  SOURCE_NAME: process.env.SOURCE_NAME,
-  SITE_ID: process.env.SITE_ID,
+  TELEMETRY_API_KEY: process.env.TELEMETRY_API_KEY!,
+  STORAGE_URL: process.env.STORAGE_URL!,
+  SOURCE_NAME: process.env.SOURCE_NAME!,
+  SITE_ID: process.env.SITE_ID!,
   START_TIME_FILE: ".startTime.txt",
   REQUEST_PAGE_SIZE: 100,
-  FIELDS: [
-    "X2",
-    "X13",
-    "X20"
-  ],
+  FIELDS: ["X2", "X13", "X20"],
 };
 
-async function getSamplesFromResponse(json: ISampleDataResponse): Promise<IDataSample[]> {
-  return json.samples.flatMap(sample => Object.entries(json.sampleDesc).map(([fieldNum, fieldDesc]) => ({
-    time: Date.parse(sample.time),
-    source: options.SOURCE_NAME,
-    field: fieldDesc.name,
-    value: sample[fieldNum as unknown as number]
-  })));
+async function getSamplesFromResponse(
+  json: ISampleDataResponse
+): Promise<IDataSample[]> {
+  return json.samples.flatMap((sample) =>
+    Object.entries(json.sampleDesc).map(([fieldNum, fieldDesc]) => ({
+      time: Date.parse(sample.time),
+      source: options.SOURCE_NAME,
+      field: fieldDesc.name,
+      value: sample[fieldNum as unknown as number],
+    }))
+  );
 }
 
-async function* getSamples(startTime: string): AsyncGenerator<IDataSample[], void, string> {
+async function* getSamples(
+  startTime: string
+): AsyncGenerator<IDataSample[], void, string> {
   while (true) {
     console.log(`Requesting samples with startTime ${startTime}`);
     const result = await fetch(
-      `https://www.telemetry.net.au/api/v1/sites/${options.SITE_ID}/samples?startTime=${startTime}&limit=${options.REQUEST_PAGE_SIZE}&order=Asc&fields=${options.FIELDS.join(",")}`,
+      `https://www.telemetry.net.au/api/v1/sites/${
+        options.SITE_ID
+      }/samples?startTime=${startTime}&limit=${
+        options.REQUEST_PAGE_SIZE
+      }&order=Asc&fields=${options.FIELDS.join(",")}`,
       {
         headers: {
-          "X-Api-Key": options.TELEMETRY_API_KEY
-        }
+          "X-Api-Key": options.TELEMETRY_API_KEY,
+        },
       }
     );
     const json: ISampleDataResponse = await result.json();
@@ -66,7 +72,9 @@ async function* getSamples(startTime: string): AsyncGenerator<IDataSample[], voi
 
 async function getStartTime(): Promise<string> {
   try {
-    const file = await fs.readFile(options.START_TIME_FILE, { encoding: "utf8" });
+    const file = await fs.readFile(options.START_TIME_FILE, {
+      encoding: "utf8",
+    });
     return file;
   } catch (err) {
     console.warn("No start time to use, getting all data.");
@@ -101,8 +109,8 @@ async function main() {
       method: "POST",
       body: JSON.stringify(samples),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     if (!result.ok) {
       throw new Error(`Failed to store results: ${result.status}`);
@@ -111,7 +119,7 @@ async function main() {
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
