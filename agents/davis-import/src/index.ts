@@ -60,12 +60,20 @@ async function main() {
     if (!davisLib.validateCRC(message.packet.data)) {
       console.warn("Packet failed CRC check");
       failedMessages.add(message.receiptHandle);
+      return [];
     }
-    const fields = davisLib.parsePacket(
-      message.packet.data,
-      davisLib.loop2WithVoltageDefinition
-    );
-    const fieldNames: Array<keyof davisLib.Loop2WithVoltage> = [
+    const fields = {
+      ...davisLib.parsePacket(message.packet.data, davisLib.loop2Definition),
+      ...(message.packet.statusData
+        ? davisLib.parsePacket(
+            message.packet.statusData,
+            davisLib.davisStatusDefinition
+          )
+        : { usbVoltage: null, batteryVoltage: null }),
+    };
+    const fieldNames: Array<
+      keyof (davisLib.Loop2Parsed & davisLib.DavisStatusParsed)
+    > = [
       "insideTemperature",
       "insideHumidity",
       "outsideTemperature",
