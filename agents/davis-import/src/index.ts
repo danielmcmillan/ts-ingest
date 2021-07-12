@@ -63,9 +63,9 @@ async function main() {
     }
     const fields = davisLib.parsePacket(
       message.packet.data,
-      davisLib.loop2Definition
+      davisLib.loop2WithVoltageDefinition
     );
-    const fieldNames: Array<keyof davisLib.Loop2Parsed> = [
+    const fieldNames: Array<keyof davisLib.Loop2WithVoltage> = [
       "insideTemperature",
       "insideHumidity",
       "outsideTemperature",
@@ -92,6 +92,8 @@ async function main() {
       // "thswIndex",
       // "uv",
       // "solarRadiation",
+      "usbVoltage",
+      "batteryVoltage",
     ];
     return fieldNames.map((field) => ({
       time: message.packet.timestamp,
