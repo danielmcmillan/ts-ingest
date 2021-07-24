@@ -17,8 +17,8 @@
     "url": "git@github.com:danielmcmillan/ts-ingest.git"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "@danielmcmillan/ts-ingest-lib": "0.1.1"
+    "@danielmcmillan/ts-ingest-lib": "^0.3.0",
+    "express": "^4.17.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.12",

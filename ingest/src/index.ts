@@ -1,5 +1,5 @@
 import express from "express";
-import { IDestination, IDataSample } from "../../lib/dist";
+import { IDestination, IDataSample } from "@danielmcmillan/ts-ingest-lib";
 
 export class TSIngestServer {
   private app: express.Express;
@@ -7,7 +7,7 @@ export class TSIngestServer {
   constructor(
     public readonly destinations: IDestination[],
     public readonly serverOptions: {
-      port: number
+      port: number;
     }
   ) {
     this.app = express();
@@ -20,8 +20,14 @@ export class TSIngestServer {
         } else {
           const samples: IDataSample[] = req.body;
           try {
-            console.log(`Storing ${samples.length} samples in ${destinations.length} destinations.`);
-            await Promise.all(destinations.map(destination => destination.storeSamples(samples)));
+            console.log(
+              `Storing ${samples.length} samples in ${destinations.length} destinations.`
+            );
+            await Promise.all(
+              destinations.map((destination) =>
+                destination.storeSamples(samples)
+              )
+            );
             res.status(204).send();
           } catch (err) {
             console.error(err);
@@ -33,9 +39,8 @@ export class TSIngestServer {
   }
 
   start() {
-    this.app.listen(
-      this.serverOptions.port,
-      () => console.log(`ts-ingest listening on port ${this.serverOptions.port}`)
+    this.app.listen(this.serverOptions.port, () =>
+      console.log(`ts-ingest listening on port ${this.serverOptions.port}`)
     );
   }
 }

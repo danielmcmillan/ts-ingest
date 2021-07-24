@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { SNS } from 'aws-sdk';
+import { SNS } from "aws-sdk";
 import { promises as fs } from "fs";
 import pg from "pg";
 import { Readable } from "stream";
@@ -10,28 +10,36 @@ const options = {
   DATA_TABLE: process.env.DATA_TABLE,
   SNS_TOPIC_ARN: process.env.SNS_TOPIC_ARN,
   START_TIME_FILE: ".ts-ingest-pg-notify-time",
-  SAMPLES_PER_NOTIFICATION: 1500
+  SAMPLES_PER_NOTIFICATION: 1500,
 };
 
 function getDataFromRows(rows: any[]): Promise<Buffer> {
-  const serialised = rows.map(row => JSON.stringify({
-    time: row.time,
-    source: row.source,
-    field: row.field,
-    value: row.value
-  })).join("\n");
+  const serialised = rows
+    .map((row) =>
+      JSON.stringify({
+        time: row.time,
+        source: row.source,
+        field: row.field,
+        value: row.value,
+      })
+    )
+    .join("\n");
   const chunks: Buffer[] = [];
   const gzip = createGzip();
   Readable.from([serialised]).pipe(gzip);
-  gzip.on("data", data => { chunks.push(data) });
-  return new Promise(resolve => {
+  gzip.on("data", (data) => {
+    chunks.push(data);
+  });
+  return new Promise((resolve) => {
     gzip.on("end", () => {
       resolve(Buffer.concat(chunks));
     });
   });
 }
 
-async function* getDataForNotification(startTime: Date): AsyncGenerator<Buffer, Date, undefined> {
+async function* getDataForNotification(
+  startTime: Date
+): AsyncGenerator<Buffer, Date, undefined> {
   const client = new pg.Client();
   await client.connect();
 
@@ -40,7 +48,7 @@ async function* getDataForNotification(startTime: Date): AsyncGenerator<Buffer, 
 
   while (true) {
     const queryResult = await client.query(
-      `SELECT time, source, field, value, ingesttime
+      `SELECT time at time zone 'UTC', source, field, value, ingesttime
         FROM ${options.DATA_TABLE}
         WHERE ingesttime > $1
         ORDER BY ingesttime ASC
@@ -49,7 +57,8 @@ async function* getDataForNotification(startTime: Date): AsyncGenerator<Buffer, 
     );
     if (queryResult.rowCount > 0) {
       skip += queryResult.rowCount;
-      const latestIngestTime = queryResult.rows[queryResult.rows.length - 1].ingesttime;
+      const latestIngestTime =
+        queryResult.rows[queryResult.rows.length - 1].ingesttime;
       yield getDataFromRows(queryResult.rows);
       if (latestIngestTime !== nextStartTime) {
         nextStartTime = latestIngestTime;
@@ -68,12 +77,14 @@ async function* getDataForNotification(startTime: Date): AsyncGenerator<Buffer, 
 
 async function getStartTime(): Promise<Date> {
   try {
-    const file = await fs.readFile(options.START_TIME_FILE, { encoding: "utf8" });
+    const file = await fs.readFile(options.START_TIME_FILE, {
+      encoding: "utf8",
+    });
     const date = new Date(file.trim());
     console.log("Sending notifications for data ingested after", date);
     return date;
   } catch (err) {
-    if (err.code === 'ENOENT') {
+    if (err.code === "ENOENT") {
       console.error("No start time to use, not notifying about existing data.");
       return new Date();
     }
@@ -82,7 +93,9 @@ async function getStartTime(): Promise<Date> {
 }
 
 async function saveStartTime(startTime: Date): Promise<void> {
-  await fs.writeFile(options.START_TIME_FILE, startTime.toISOString(), { encoding: "utf8" });
+  await fs.writeFile(options.START_TIME_FILE, startTime.toISOString(), {
+    encoding: "utf8",
+  });
 }
 
 async function main() {
@@ -110,14 +123,16 @@ async function main() {
       break;
     }
     const notificationData = next.value.toString("base64");
-    await sns.publish({
-      TopicArn: options.SNS_TOPIC_ARN,
-      Message: notificationData
-    }).promise();
+    await sns
+      .publish({
+        TopicArn: options.SNS_TOPIC_ARN,
+        Message: notificationData,
+      })
+      .promise();
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });

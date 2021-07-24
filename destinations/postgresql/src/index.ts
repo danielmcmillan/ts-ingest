@@ -14,7 +14,9 @@ export class PostgresqlDestination implements IDestination {
     const client = new pg.Client(this.options.pg);
     await client.connect();
     const rows = samples.map((sample) => [
-      sample.time / 1000,
+      sample.time !== undefined && sample.time > 31536000000
+        ? sample.time / 1000
+        : ingestTime,
       sample.source,
       sample.field,
       sample.value,
