@@ -1,0 +1,11 @@
+[Unit]
+Description=time-series ingest server
+
+[Service]
+Type=simple
+User=daniel
+Group=daniel
+ExecStart=/home/daniel/.nvm/versions/node/v14.17.1/bin/node /home/daniel/tsingest/server/server.js
+
+[Install]
+WantedBy=multi-user.target
