@@ -21,11 +21,11 @@
     "url": "git@github.com:danielmcmillan/ts-ingest.git"
   },
   "devDependencies": {
-    "@types/node-fetch": "^2.5.11",
+    "@types/node-fetch": "^2.6.1",
     "typescript": "^3.9.10"
   },
   "dependencies": {
     "@danielmcmillan/ts-ingest-lib": "^0.2.0",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.7"
   }
 }
