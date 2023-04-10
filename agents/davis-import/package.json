@@ -27,7 +27,7 @@
   "dependencies": {
     "@danielmcmillan/davis-weather-lib": "^0.5.0",
     "@danielmcmillan/ts-ingest-lib": "^0.2.0",
-    "aws-sdk": "^2.930.0",
+    "aws-sdk": "^2.1354.0",
     "node-fetch": "^2.6.1"
   }
 }
