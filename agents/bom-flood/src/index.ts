@@ -173,6 +173,7 @@ async function main() {
     throw new Error(`Failed to store results: ${result.status}`);
   }
   client.close();
+  process.exit(0);
 }
 
 main().catch((err) => {

@@ -1,6 +1,6 @@
 {
   "name": "@danielmcmillan/ts-ingest-agent-bom-flood",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "ts-ingest timeseries data collection agent for BOM flood rainfall data.",
   "main": "dist/index.js",
   "bin": {
